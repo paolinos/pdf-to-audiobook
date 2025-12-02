@@ -9,5 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
-*.pdf
+# Temporary folder
 /tmp
+# just in case, for testing purpose.
+*.pdf
+*.mp3
+
