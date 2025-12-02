@@ -3,7 +3,7 @@ from os import path
 import time
 from pathlib import Path
 
-from helpers.file import get_file_data, read_file_async, write_file_async
+from helpers.file import get_file_data, read_file_async, write_file_async, delete_file
 from pdf_converter.markdown import convert_pdf_to_txt
 from tts.tts import TextToAudio
 from ffmpeg.join import merge_and_convert_mp3
@@ -15,7 +15,6 @@ class PdfMp3Converter:
 
     def __init__(self):
         self._check_tmp_folder(TEMP_FOLDER)
-
 
     async def _pdf_to_text(self, pdf_path: str, force: bool = False) -> str:
         """
@@ -102,14 +101,29 @@ class PdfMp3Converter:
         return path.isfile(pdf_path) and ext.lower() == ".pdf"
     
 
+    def _delete_temp_files(self, tmp_paths:list[str]):
+        for fp in tmp_paths:
+            delete_file(fp)
+
+
+
     async def run(self, pdf_path:str):
         dt = time.time()
 
         if self._validate(pdf_path) is False:
             raise ValueError("Error: Invalid pdf file or path. Please review the path of the pdf file.")
-        
+
+        tmp_paths:list[str] = []
+
         text_path = await self._pdf_to_text(pdf_path)
+        tmp_paths.append(text_path)
+
         audios = await self._text_to_audio(text_path)
+        tmp_paths  = tmp_paths + audios
+        
         merge_and_convert_mp3(audios, pdf_path)
+
+        # Delete files
+        self._delete_temp_files(tmp_paths)
 
         print(f"Total processing time: {time.time() - dt} seconds")

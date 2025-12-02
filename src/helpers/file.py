@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 
@@ -22,3 +23,10 @@ async def read_file_async(path: str) -> str:
     with open(path, "r") as content_file:
         content = content_file.read()
         return content
+    
+def delete_file(p:str):
+    if os.path.exists(p):
+        os.remove(p)
+
+def is_file_exist(p:str) -> bool:
+    return os.path.isfile(p)
