@@ -1,7 +1,7 @@
 [project]
-name = "pdf-to-voice"
+name = "pdf-to-audiobook"
 version = "0.1.0"
-description = "Add your description here"
+description = "Generate audiobook audio file from pdf"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

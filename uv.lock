@@ -2640,7 +2640,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pdf-to-voice"
+name = "pdf-to-audiobook"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
