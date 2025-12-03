@@ -64,4 +64,106 @@ So I decide to convert the markdown file into a `txt` fila, that only will have 
 After having a clean text file, we start to use the `TTS`, but if we pass the entire file, some parts of audio could be large, and that is a lot of CPU/GPU process intensive.
 So I decide to split a bit the text in many part of text and generate many small files, to make it lightweight.
 and then using the `ffmpy` (ffmpeg) I merge all the `.wav` files (**TTS only use wav, more info in their description**) and convert to mp3.
- 
+
+
+### v0.1
+```mermaid
+---
+title: v0.1 of the PDF to Audiobook
+---
+stateDiagram
+    direction LR
+    %% App run
+    [*] --> CLI
+    state CLI {
+      direction LR
+      ParseArgs: Parse args
+      PdfMp3ConverterRun: PdfMp3Converter run()
+      ParseArgs --> PdfMp3ConverterRun
+        state PdfMp3ConverterRun {
+            validateFilePath: Validate pdf file path 
+            pdfToText: Pdf to Text
+            textToAudio: Text to Audio
+            generateMp3: concat audios and convert to mp3
+
+            [*] --> validateFilePath
+            validateFilePath --> [*]: Error path not valid or file extension not valid
+            validateFilePath --> pdfToText: 
+            pdfToText --> textToAudio: Read pdf file and return a text file
+            textToAudio --> generateMp3: Read the text file and split by `\n\n` to simulate a page split, and avoid to use all the VRAM, and start to generate many `.wav` files
+            generateMp3 --> [*] : merge all the `.wav` files into a one `mp3`
+            
+            
+        }
+    }
+    CLI --> [*]: ouput mp3 file in the same path
+```
+This was a fast approach to test every component and see if the ideas was possible.
+- Pro:
+    - Simple and straightforward
+    - not much complexity
+- Const:
+    - large text can produce errors, for missing RAM.
+    - not async.
+
+### v0.2 (WIP Proposal)
+To make a faster and improve version, we can do "Event-Driven Architecture" like, making workers, and make communication between events like PubSub.
+We try to use the less amount of RAM, reading by each page. by doing like "EVA", we can start to process each page individually (pdf to text, text to audio) asynchronously. 
+
+```mermaid
+stateDiagram
+    %%direction LR
+    %% App run
+    [*] --> CLI
+    state CLI {
+      %%direction LR
+
+        topicProcessPdf: topic "process-pdf"
+        topicProcessPage: topic "process-page-audio"
+        topicProcessMerge: topic "process-merge"
+        topicProcessCompleted: topic "process-completed"
+
+
+        [*] --> main
+        main --> createWorkers
+        createWorkers --> PdfTextWorker 
+        createWorkers --> TextAudioWorker
+        createWorkers --> MergeAudioWorker
+        main --> subscribeToComplete : listen for "process-completed" with the mp3 file
+      
+        state PdfTextWorker {
+            processFile: process each page of the file using "marker-pdf"
+
+            topicProcessPdf : start to consume "process-pdf" topic   
+            topicProcessPdf --> processFile
+            processFile --> readPage: read each page and generate a text.
+            readPage --> publishPageToGenerateAudio: publish "process-page-audio" to generate the audio
+            readPage --> processFile: read next page
+            readPage --> [*]
+        }
+
+        state TextAudioWorker {
+            topicProcessPage --> convertTextToAudio: generate N audios per page
+            topicProcessPage: start listening for "process-page-audio" and generate the audios
+            convertTextToAudio --> generatePagesAudio
+            generatePagesAudio --> publishPageCompleted
+            generatePagesAudio --> [*]
+        }
+
+        state MergeAudioWorker {
+            
+            topicProcessMerge --> mergeAudios
+            topicProcessMerge: consume topic, and generate script to merge audio
+            mergeAudios --> topicProcessCompleted: as
+            mergeAudios --> [*] : save mp3 file. 
+        }
+
+        PdfTextWorker --> end  
+        TextAudioWorker --> end 
+        MergeAudioWorker --> end
+        subscribeToComplete --> end: return mp3 file path and 
+        end --> [*]
+
+    }
+    CLI --> [*]: ouput mp3 file in the same path
+```
