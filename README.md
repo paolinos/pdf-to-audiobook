@@ -1,18 +1,18 @@
 # PDF to Audiobook
 
 This project is going to use different libraries, to read a PDF file and generate a audiobook in mp3 format.
+So normal pdf libraries like `pymupdf` or `pypdf` can read, modify and do other stuff, but they cannot understand if there's a block of code. because code could be just a string with different background and font.
 
-- [marker-pdf](https://github.com/datalab-to/marker): 
-    Marker converts documents to markdown, JSON, chunks, and HTML quickly and accurately.
-
-    is going to download 
+- [marker-pdf](https://github.com/datalab-to/marker):  
+    Marker converts documents to markdown, JSON, chunks, and HTML quickly and accurately.  
+    **NOTE** marker download all models at:
     `/home/{user}/.cache/datalab`
-- [TTS](https://github.com/coqui-ai/TTS)
+- [TTS](https://github.com/coqui-ai/TTS):  
     TTS is a library for advanced Text-to-Speech generation. 
     Coqui-TTS is the successor to Mozilla-TTS [mozilla/TTS](https://github.com/mozilla/TTS)
 
 
-- [ffmpy](https://github.com/Ch00k/ffmpy)
+- [ffmpy](https://github.com/Ch00k/ffmpy):  
     ffmpy is a simple FFmpeg command line wrapper. 
     It implements a Pythonic interface for FFmpeg command line compilation and uses Python's subprocess to execute the compiled command line.
 
