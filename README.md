@@ -43,6 +43,9 @@ uv add ffmpy
 uv add asyncio
 uv add beautifulsoup4
 uv add markdown
+
+# Dev
+uv add --dev pytest ruff
 ```
 
 ### create venv
@@ -55,6 +58,14 @@ uv venv
 # Then sync to install all dependencies
 uv sync
 ```
+
+## Test
+for testing we're using `pytest`
+
+```sh
+pytest -v
+```
+
 
 ## Processing workflow
 
