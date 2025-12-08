@@ -102,11 +102,12 @@ This was a fast approach to test every component and see if the ideas was possib
 - Pro:
     - Simple and straightforward
     - not much complexity
-- Const:
+- Cons:
     - large text can produce errors, for missing RAM.
     - not async.
+    - coqui TTS have a limitation for speed, and some voices are not clear to listen for a book
 
-### v0.2 (WIP Proposal)
+### v0.2 (beta 1)
 To make a faster and improve version, we can do "Event-Driven Architecture" like, making workers, and make communication between events like PubSub.
 We try to use the less amount of RAM, reading by each page. by doing like "EVA", we can start to process each page individually (pdf to text, text to audio) asynchronously. 
 
@@ -154,7 +155,7 @@ stateDiagram
             
             topicProcessMerge --> mergeAudios
             topicProcessMerge: consume topic, and generate script to merge audio
-            mergeAudios --> topicProcessCompleted: as
+            mergeAudios --> topicProcessCompleted
             mergeAudios --> [*] : save mp3 file. 
         }
 
@@ -164,6 +165,75 @@ stateDiagram
         subscribeToComplete --> end: return mp3 file path and 
         end --> [*]
 
+    }
+    CLI --> [*]: ouput mp3 file in the same path
+```
+- Pro:
+    - more similar real a microservices approach
+    - decoupling functionalities
+- Cons:
+    - running multiple LLM at the same time, also for short period of time, could produce more error for one single CPU/GPU unit.
+    - reading page by page, will lost the context, and sometimes we're going to break some information, making worse the output and having issues.
+    - coqui TTS have a limitation for speed, and some voices are not clear to listen for a book
+
+
+### v0.2 (beta 2)
+So we still want to run in async, but we need to allow to run in one CPU/GPU unit.
+and also with some Cons of [v0.2 (beta 1)](#v02-beta-1), we can reuse the idea, and use the Saga (Choreography) pattern [more about Saga pattern](https://microservices.io/patterns/data/saga.html).
+
+The approach is similar, but we run service at time.
+Then we need a better post processing to the text, adding new lines or dots or something, to improve the output audio.
+Add more args, to slow the speed, to only generate text, only audio
+
+```mermaid
+stateDiagram
+    %% App run
+    [*] --> CLI
+    state CLI {
+        validateArgs: validate args, check valid path, pdf and other args
+        topicProcessPdf: topic "process-pdf"
+        topicProcessText: topic "process-text-audio"
+        topicProcessMerge: topic "process-merge"
+        topicProcessCompleted: topic "process-completed"
+
+        [*] --> main
+        main --> validateArgs
+        validateArgs --> createWorkers
+        createWorkers --> PdfTextWorker 
+        createWorkers --> TextAudioWorker
+        createWorkers --> MergeAudioWorker
+        validateArgs --> subscribeToComplete : listen for "process-completed" with the mp3 file
+
+        state PdfTextWorker {
+            processFile: process the file using "marker-pdf"
+
+            topicProcessPdf : start to consume "process-pdf" topic   
+            topicProcessPdf --> processFile
+            processFile --> postFileProcessing: clear file. to improve the audio output.
+            postFileProcessing --> publishPageToGenerateAudio: publish "process-text-audio" to generate the audio
+            postFileProcessing --> [*]
+        }
+
+        state TextAudioWorker {
+            topicProcessText: start listening for "process-text-audio" and generate the audios
+            topicProcessText --> convertTextToAudio: generate N audios, following the rules that came from the event
+            convertTextToAudio --> publishAudiosCompleted
+            convertTextToAudio --> [*]
+        }
+
+        state MergeAudioWorker {
+            
+            topicProcessMerge --> mergeAudios
+            topicProcessMerge: consume "process-merge" topic, and generate script to merge audio
+            mergeAudios --> topicProcessCompleted
+            mergeAudios --> [*] : save mp3 file. 
+        }
+
+        PdfTextWorker --> end  
+        TextAudioWorker --> end 
+        MergeAudioWorker --> end
+        subscribeToComplete --> end: return mp3 file path and 
+        end --> [*]
     }
     CLI --> [*]: ouput mp3 file in the same path
 ```
