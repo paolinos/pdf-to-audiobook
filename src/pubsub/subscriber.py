@@ -1,5 +1,9 @@
 import asyncio
+from typing import Callable, TypeVar
 from pubsub.base import _BasePubSub, _GroupSubscriber
+
+T = TypeVar("T")
+
 
 class Subscriber:
 
@@ -16,7 +20,7 @@ class Subscriber:
             self._subscriber[topic] = _BasePubSub()._add_subscriber(self._group, topic)
 
 
-    async def listening_once(self, topic:str):
+    async def listening_once(self, topic:str, c:Callable[[], T]) -> T:
         """
         Listening until receive a message
         if not message received, will not produce error and continue waiting
