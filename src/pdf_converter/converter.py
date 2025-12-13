@@ -7,11 +7,6 @@ from marker.models import create_model_dict
 from marker.renderers.json import JSONOutput
 from marker.renderers.markdown import MarkdownOutput
 
-DEBUG = False
-"""
-Enable/disable `marker` debug
-"""
-
 
 class MarkerOutputFormat(str, Enum):
     MARKDOWN = "markdown"
@@ -25,12 +20,26 @@ def run_converter(
     format: MarkerOutputFormat,
     filepath: str,
     transform: Callable[[MarkdownOutput | JSONOutput], T],
+    debug: bool = False,
 ) -> T:
-    config = {
-        "output_format": format,
-    }
+    """
+    Run converter to generate markdown/json output
 
-    if DEBUG is True:
+    :param format: type MARKDOWN or JSON
+    :type format: MarkerOutputFormat
+    :param filepath: pdf file to convert
+    :type filepath: str
+    :param transform: type to return
+    :type transform: Callable[[MarkdownOutput | JSONOutput], T]
+    :param page_range: Page range to convert, specify comma separated page numbers or ranges.  Example: 0,5-10,20
+    :type page_range: Optional[str]
+    :return: Description
+    :rtype: T
+    """
+
+    config = {"output_format": format}
+
+    if debug is True:
         # enable debug. and export metadata in the `./tmp` folder
         config["output_dir"] = "./tmp"
         config["debug"] = True
