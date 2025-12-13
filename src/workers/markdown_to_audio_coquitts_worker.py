@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from helpers.file import get_file_data
 from models import Mp3ConverterPayload, TextAudioPayload
-from tts.tts import TTS_MODEL, CoquiTTS, get_speaker
+from tts.coqui_tts import TTS_MODEL, CoquiTTS, get_speaker
 from utils.logging import Logger
 from workers.base import BaseWorker, WorkerTopic
 
