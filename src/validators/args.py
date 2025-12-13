@@ -1,31 +1,22 @@
 import argparse
-from dataclasses import dataclass
 from os import path
+from pathlib import Path
 
+from models import CliOptions
 
-@dataclass(frozen=True)
-class CliOptions:
-    input_path: str
-    audio_speed: float
-
-    # def __init__(self, input_path: str, audio_speed: float):
-    #     self.input_path = input_path
-    #     self.audio_speed = audio_speed
-
-
-CLI_HELPER = """
-Pdf to Audiobook
-----------------
-
-Usage:
-
-	python ./src/main.py [options] [pdf file path]
-
-Options:
-	-speed
-"""
+TEMP_FOLDER = "./tmp"
 
 CLI_DEFAULT_SPEED = 1.0
+
+
+def _check_tmp_folder(path: str):
+    """
+    Docstring for check_tmp_folder
+
+    :param path: Description
+    :type path: str
+    """
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def parse_args() -> CliOptions:
@@ -49,6 +40,20 @@ def parse_args() -> CliOptions:
         default=CLI_DEFAULT_SPEED,
         required=False,
     )
+    parser.add_argument(
+        "--debug",
+        help="all is the default, but you can debug part of the pipeline like: all,pdf,tts,ffmpeg. Uou can use multiple options using ',' without space.",
+        type=str,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--temp",
+        help="path of the temp folder that will be used to make parser, conversions, etc",
+        type=str,
+        default=TEMP_FOLDER,
+        required=False,
+    )
 
     args = parser.parse_args()
 
@@ -60,4 +65,11 @@ def parse_args() -> CliOptions:
             "speed had an invalid value. should be a float number from 0.5 to 2.0"
         )
 
-    return CliOptions(args.filepath, args.speed)
+    _check_tmp_folder(args.temp)
+
+    return CliOptions(
+        input_path=args.filepath,
+        audio_speed=args.speed,
+        tmp_folder=args.temp,
+        debug=args.debug,
+    )
