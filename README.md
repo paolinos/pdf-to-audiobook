@@ -202,9 +202,9 @@ stateDiagram
     [*] --> CLI
     state CLI {
         validateArgs: validate args, check valid path, pdf and other args
-        topicProcessPdf: topic "process-pdf"
-        topicProcessText: topic "process-text-audio"
-        topicProcessMerge: topic "process-merge"
+        topicProcessPdf: topic "process-pdf-to-markdown"
+        topicProcessText: topic "process-markdown-to-audio"
+        topicProcessMerge: topic "process-mp3-converter"
         topicProcessCompleted: topic "process-completed"
 
         [*] --> main
@@ -218,15 +218,15 @@ stateDiagram
         state PdfTextWorker {
             processFile: process the file using "marker-pdf"
 
-            topicProcessPdf : start to consume "process-pdf" topic   
+            topicProcessPdf : start to consume "process-pdf-to-markdown"" topic   
             topicProcessPdf --> processFile
             processFile --> postFileProcessing: clear file. to improve the audio output.
-            postFileProcessing --> publishPageToGenerateAudio: publish "process-text-audio" to generate the audio
+            postFileProcessing --> publishPageToGenerateAudio: publish "process-markdown-to-audio" to generate the audio
             postFileProcessing --> [*]
         }
 
         state TextAudioWorker {
-            topicProcessText: start listening for "process-text-audio" and generate the audios
+            topicProcessText: start listening for "process-markdown-to-audio" and generate the audios
             topicProcessText --> convertTextToAudio: generate N audios, following the rules that came from the event
             convertTextToAudio --> publishAudiosCompleted
             convertTextToAudio --> [*]
@@ -235,7 +235,7 @@ stateDiagram
         state MergeAudioWorker {
             
             topicProcessMerge --> mergeAudios
-            topicProcessMerge: consume "process-merge" topic, and generate script to merge audio
+            topicProcessMerge: consume "process-mp3-converter" topic, and generate script to merge audio
             mergeAudios --> topicProcessCompleted
             mergeAudios --> [*] : save mp3 file. 
         }
@@ -247,4 +247,18 @@ stateDiagram
         end --> [*]
     }
     CLI --> [*]: ouput mp3 file in the same path
+```
+
+
+
+## CUDA
+
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate XXX.XX MiB. GPU 0 has a total capacity of XX.XX GiB of which XXX.XX MiB is free.
+
+```sh
+# List all the GPU process
+nvidia-smi
+
+# Delete the 'python' process
+kill -9 <PID>
 ```
